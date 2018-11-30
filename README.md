@@ -1,9 +1,9 @@
 
 # BERT-th
 
-[Google's **BERT** project](https://github.com/google-research/bert) is currently the state-of-the-art method of pre-training text representations which additionally provides multilingual models. ~~Unfortunately, Thai is the only one in 103 languages that is excluded due to difficulties in word segmentation.~~
+Google's [**BERT**](https://github.com/google-research/bert) is currently the state-of-the-art method of pre-training text representations which additionally provides multilingual models. ~~Unfortunately, Thai is the only one in 103 languages that is excluded due to difficulties in word segmentation.~~
 
-BERT-th presents the Thai-only pre-trained model based on the BERT-Base structure. It is now available to be downloaded.
+BERT-th presents the Thai-only pre-trained model based on the BERT-Base structure. It is now available to download.
 * **[`BERT-Base, Thai`](https://drive.google.com/open?id=1J3uuXZr_Se_XIFHj7zlTJ-C9wzI9W_ot)**: BERT-Base architecture, Thai-only model
 
 BERT-th also includes relevant codes and scripts along with the pre-trained model, all of which are the modified versions of those in the original BERT project.
@@ -112,7 +112,7 @@ This table compares the Thai-only model with XNLI baselines and the Multilingual
 <!-- Use html table because github markdown doesn't support colspan -->
 <table>
   <tr>
-    <td colspan="2" align="center"><b>XNLI BaseLine</b></td>
+    <td colspan="2" align="center"><b>XNLI Baseline</b></td>
     <td colspan="2" align="center"><b>BERT</b></td>
   </tr>
   <tr>
