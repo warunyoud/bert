@@ -61,6 +61,14 @@ flags.DEFINE_float(
     "Probability of creating sequences which are shorter than the "
     "maximum length.")
 
+flags.DEFINE_bool(
+    "thai_text", False,
+    "Whether to process Thai language.")
+
+flags.DEFINE_string(
+    "spm_file", None,
+    "SentencePiece model file for Thai language.")
+
 
 class TrainingInstance(object):
   """A single training instance (sentence pair)."""
@@ -332,10 +340,6 @@ def create_instances_from_document(
   return instances
 
 
-MaskedLmInstance = collections.namedtuple("MaskedLmInstance",
-                                          ["index", "label"])
-
-
 def create_masked_lm_predictions(tokens, masked_lm_prob,
                                  max_predictions_per_seq, vocab_words, rng):
   """Creates the predictions for the masked LM objective."""
@@ -349,6 +353,8 @@ def create_masked_lm_predictions(tokens, masked_lm_prob,
   rng.shuffle(cand_indexes)
 
   output_tokens = list(tokens)
+
+  masked_lm = collections.namedtuple("masked_lm", ["index", "label"])  # pylint: disable=invalid-name
 
   num_to_predict = min(max_predictions_per_seq,
                        max(1, int(round(len(tokens) * masked_lm_prob))))
@@ -376,7 +382,7 @@ def create_masked_lm_predictions(tokens, masked_lm_prob,
 
     output_tokens[index] = masked_token
 
-    masked_lms.append(MaskedLmInstance(index=index, label=tokens[index]))
+    masked_lms.append(masked_lm(index=index, label=tokens[index]))
 
   masked_lms = sorted(masked_lms, key=lambda x: x.index)
 
@@ -410,8 +416,14 @@ def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
 def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
 
-  tokenizer = tokenization.FullTokenizer(
-      vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
+  if FLAGS.thai_text:
+    if not FLAGS.spm_file:
+      print("Please specify the SentencePiece model file by using --spm_file.")
+      return
+    tokenizer = tokenization.ThaiTokenizer(vocab_file=FLAGS.vocab_file, spm_file=FLAGS.spm_file)    
+  else:
+    tokenizer = tokenization.FullTokenizer(
+        vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
 
   input_files = []
   for input_pattern in FLAGS.input_file.split(","):

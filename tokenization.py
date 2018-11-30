@@ -73,7 +73,9 @@ def load_vocab(vocab_file):
   index = 0
   with tf.gfile.GFile(vocab_file, "r") as reader:
     while True:
-      token = convert_to_unicode(reader.readline())
+      token = reader.readline()
+      if token.split(): token = token.split()[0] # to support SentencePiece vocab file
+      token = convert_to_unicode(token)
       if not token:
         break
       token = token.strip()
@@ -99,7 +101,7 @@ def convert_ids_to_tokens(inv_vocab, ids):
 
 
 def whitespace_tokenize(text):
-  """Runs basic whitespace cleaning and splitting on a piece of text."""
+  """Runs basic whitespace cleaning and splitting on a peice of text."""
   text = text.strip()
   if not text:
     return []
@@ -121,6 +123,49 @@ class FullTokenizer(object):
     for token in self.basic_tokenizer.tokenize(text):
       for sub_token in self.wordpiece_tokenizer.tokenize(token):
         split_tokens.append(sub_token)
+
+    return split_tokens
+
+  def convert_tokens_to_ids(self, tokens):
+    return convert_by_vocab(self.vocab, tokens)
+
+  def convert_ids_to_tokens(self, ids):
+    return convert_by_vocab(self.inv_vocab, ids)
+
+
+from bpe_helper import BPE
+import sentencepiece as spm
+
+class ThaiTokenizer(object):
+  """Tokenizes Thai texts."""
+  
+  def __init__(self, vocab_file, spm_file):
+    self.vocab = load_vocab(vocab_file)
+    self.inv_vocab = {v: k for k, v in self.vocab.items()}
+    
+    self.bpe = BPE(vocab_file)    
+    self.s = spm.SentencePieceProcessor()
+    self.s.Load(spm_file)
+
+  def tokenize(self, text):
+    bpe_tokens = self.bpe.encode(text).split(' ')
+    spm_tokens = self.s.EncodeAsPieces(text)
+    
+    tokens = bpe_tokens if len(bpe_tokens) < len(spm_tokens) else spm_tokens
+    
+    split_tokens = []
+    
+    for token in tokens:
+      new_token = token
+      
+      if token.startswith('_') and not token in self.vocab:
+        split_tokens.append('_')
+        new_token = token[1:]
+        
+      if not new_token in self.vocab:
+        split_tokens.append('<unk>')
+      else:
+        split_tokens.append(new_token)
 
     return split_tokens
 
@@ -249,7 +294,7 @@ class BasicTokenizer(object):
 class WordpieceTokenizer(object):
   """Runs WordPiece tokenziation."""
 
-  def __init__(self, vocab, unk_token="[UNK]", max_input_chars_per_word=200):
+  def __init__(self, vocab, unk_token="[UNK]", max_input_chars_per_word=100):
     self.vocab = vocab
     self.unk_token = unk_token
     self.max_input_chars_per_word = max_input_chars_per_word

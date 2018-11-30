@@ -123,6 +123,14 @@ flags.DEFINE_integer(
     "num_tpu_cores", 8,
     "Only used if `use_tpu` is True. Total number of TPU cores to use.")
 
+flags.DEFINE_string(
+    "spm_file", None,
+    "SentencePiece model file for Thai language.")
+
+flags.DEFINE_string(
+    "xnli_language", None,
+    "Specified language for XNLI processing.")
+
 
 class InputExample(object):
   """A single training/test example for simple sequence classification."""
@@ -188,8 +196,8 @@ class DataProcessor(object):
 class XnliProcessor(DataProcessor):
   """Processor for the XNLI data set."""
 
-  def __init__(self):
-    self.language = "zh"
+  def __init__(self, language='zh'):
+    self.language = language
 
   def get_train_examples(self, data_dir):
     """See base class."""
@@ -212,7 +220,8 @@ class XnliProcessor(DataProcessor):
 
   def get_dev_examples(self, data_dir):
     """See base class."""
-    lines = self._read_tsv(os.path.join(data_dir, "xnli.dev.tsv"))
+    #lines = self._read_tsv(os.path.join(data_dir, "xnli.dev.tsv"))
+    lines = self._read_tsv(os.path.join(data_dir, "xnli.test.tsv"))
     examples = []
     for (i, line) in enumerate(lines):
       if i == 0:
@@ -349,6 +358,51 @@ class ColaProcessor(DataProcessor):
         label = "0"
       else:
         text_a = tokenization.convert_to_unicode(line[3])
+        label = tokenization.convert_to_unicode(line[1])
+      examples.append(
+          InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+    return examples
+
+
+class WongnaiProcessor(DataProcessor):
+  """Processor for the Wongnai data set."""
+
+  def get_train_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_wongnai(os.path.join(data_dir, "w_review_train.csv")), "train")
+
+  def get_test_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_wongnai(os.path.join(data_dir, "test_file.csv")), "test")
+
+  def get_labels(self):
+    """See base class."""
+    return ["1", "2", "3", "4", "5"]
+
+  def _read_wongnai(self, input_file):
+    """Reads a semicolon separated value file."""
+    with tf.gfile.Open(input_file, "r") as f:
+      reader = csv.reader(f, delimiter=";")
+      lines = []
+      for line in reader:
+        lines.append(line)
+      return lines 
+
+  def _create_examples(self, lines, set_type):
+    """Creates examples for the training and dev sets."""
+    examples = []
+    for (i, line) in enumerate(lines):
+      # Only the test set has a header
+      if set_type == "test" and i == 0:
+        continue
+      guid = "%s-%s" % (set_type, i)
+      if set_type == "test":
+        text_a = tokenization.convert_to_unicode(line[1])
+        label = "3"
+      else:
+        text_a = tokenization.convert_to_unicode(line[0])
         label = tokenization.convert_to_unicode(line[1])
       examples.append(
           InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
@@ -607,7 +661,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         num_labels, use_one_hot_embeddings)
 
     tvars = tf.trainable_variables()
-    initialized_variable_names = {}
+
     scaffold_fn = None
     if init_checkpoint:
       (assignment_map, initialized_variable_names
@@ -746,6 +800,7 @@ def main(_):
       "mnli": MnliProcessor,
       "mrpc": MrpcProcessor,
       "xnli": XnliProcessor,
+      "wongnai": WongnaiProcessor,
   }
 
   if not FLAGS.do_train and not FLAGS.do_eval and not FLAGS.do_predict:
@@ -761,18 +816,27 @@ def main(_):
         (FLAGS.max_seq_length, bert_config.max_position_embeddings))
 
   tf.gfile.MakeDirs(FLAGS.output_dir)
-
+  
   task_name = FLAGS.task_name.lower()
 
   if task_name not in processors:
     raise ValueError("Task not found: %s" % (task_name))
 
-  processor = processors[task_name]()
+  if task_name == 'xnli' and FLAGS.xnli_language:
+    processor = processors[task_name](FLAGS.xnli_language)
+  else:
+    processor = processors[task_name]()
 
   label_list = processor.get_labels()
 
-  tokenizer = tokenization.FullTokenizer(
-      vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
+  if (task_name == 'xnli' and FLAGS.xnli_language == 'th') or task_name == 'wongnai':
+    if not FLAGS.spm_file:
+      print("Please specify the SentencePiece model file by using --spm_file.")
+      return
+    tokenizer = tokenization.ThaiTokenizer(vocab_file=FLAGS.vocab_file, spm_file=FLAGS.spm_file)    
+  else:
+    tokenizer = tokenization.FullTokenizer(
+        vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
 
   tpu_cluster_resolver = None
   if FLAGS.use_tpu and FLAGS.tpu_name:
