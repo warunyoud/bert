@@ -148,7 +148,7 @@ python run_classifier.py \
   --max_seq_length=128 \
   --train_batch_size=32 \
   --learning_rate=5e-5 \
-  --num_train_epochs=4.0 \
+  --num_train_epochs=2.0 \
   --output_dir=$OUTPUT_DIR \
   --spm_file=$BPE_DIR/th.wiki.bpe.op25000.model
 ```
