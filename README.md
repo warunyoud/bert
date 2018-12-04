@@ -24,7 +24,7 @@ After preprocessing, the training corpus consists of approximately 2 million sen
 
 BERT uses [WordPiece](https://arxiv.org/pdf/1609.08144.pdf) as a tokenization mechanism. But it is Google internal, we cannot apply existing Thai word segmentation and then utilize WordPiece to learn the set of subword units. The best alternative is [SentencePiece](https://github.com/google/sentencepiece) which implements [BPE](https://arxiv.org/abs/1508.07909) and needs no word segmentation.
 
-In this project, we adopt a pre-trained Thai SentencePiece model from [BPEmb](https://github.com/bheinzerling/bpemb). The model of 25000 vocabularies is chosen and the vocabulary file has to be augmented with BERT's special characters, including '[PAD]', '[CLS]', '[SEP]' and '[MASK]'. The model and vocaulary files can be downloaded **[`here`](https://drive.google.com/file/d/1F7pCgt3vPlarI9RxKtOZUrC_67KMNQ1W/view?usp=sharing)**.
+In this project, we adopt a pre-trained Thai SentencePiece model from [BPEmb](https://github.com/bheinzerling/bpemb). The model of 25000 vocabularies is chosen and the vocabulary file has to be augmented with BERT's special characters, including '[PAD]', '[CLS]', '[SEP]' and '[MASK]'. The model and vocabulary files can be downloaded **[`here`](https://drive.google.com/file/d/1F7pCgt3vPlarI9RxKtOZUrC_67KMNQ1W/view?usp=sharing)**.
 
 `SentencePiece` and `bpe_helper.py` from BPEmb are both used to tokenize data. `ThaiTokenizer class` has been added to BERT's `tokenization.py` for tokenizing Thai texts.
 
@@ -41,7 +41,6 @@ python create_pretraining_data.py \
   --input_file=$TEXT_DIR/thaiwikitext_sentseg \
   --output_file=$DATA_DIR/tf_examples.tfrecord \
   --vocab_file=$BPE_DIR/th.wiki.bpe.op25000.vocab \
-  --do_lower_case=False \
   --max_seq_length=128 \
   --max_predictions_per_seq=20 \
   --masked_lm_prob=0.15 \
