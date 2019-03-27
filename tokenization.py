@@ -192,8 +192,8 @@ import sentencepiece as spm
 class ThaiTokenizer(object):
   """Tokenizes Thai texts."""
   
-  def __init__(self, vocab_file, spm_file, do_lower_case=True):
-    self.vocab = load_vocab(vocab_file, sentencePiece=True)
+  def __init__(self, vocab_file, spm_file):
+    self.vocab = load_vocab(vocab_file, True)
     self.inv_vocab = {v: k for k, v in self.vocab.items()}
     
     self.bpe = BPE(vocab_file)    

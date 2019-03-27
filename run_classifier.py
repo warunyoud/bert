@@ -707,12 +707,12 @@ def main(_):
 
   label_list = processor.get_labels()
 
-  if not FLAGS.thai_model:
+  if FLAGS.thai_model:
     if not FLAGS.spm_file:
       raise ValueError("Please specify the SentencePiece model file by using --spm_file.")
 
     tokenizer = tokenization.ThaiTokenizer(
-      vocab_file=FLAGS.vocab_file, spm_file=FLAGS.spm_file, do_lower_case=FLAGS.do_lower_case)
+      vocab_file=FLAGS.vocab_file, spm_file=FLAGS.spm_file)
   else:
     tokenizer = tokenization.FullTokenizer(
       vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
